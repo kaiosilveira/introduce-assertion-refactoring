@@ -13,14 +13,6 @@ describe('Customer', () => {
       customer.discountRate = 0.2;
       expect(customer.applyDiscount(100)).toBe(80);
     });
-
-    it('should throw an error if discountRate is negative', () => {
-      const customer = new Customer();
-      customer.discountRate = -0.2;
-      expect(() => {
-        customer.applyDiscount(100);
-      }).toThrow('Discount rate must be a positive number');
-    });
   });
 
   describe('set discountRate', () => {

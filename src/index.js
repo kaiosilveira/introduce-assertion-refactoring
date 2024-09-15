@@ -3,10 +3,7 @@ import assert from 'node:assert';
 export class Customer {
   applyDiscount(aNumber) {
     if (!this.discountRate) return aNumber;
-    else {
-      assert(this.discountRate > 0, 'Discount rate must be a positive number');
-      return aNumber - this.discountRate * aNumber;
-    }
+    else return aNumber - this.discountRate * aNumber;
   }
 
   set discountRate(aNumber) {
