@@ -10,6 +10,7 @@ export class Customer {
   }
 
   set discountRate(aNumber) {
+    assert(null === aNumber || aNumber >= 0, 'Discount rate must be a positive number');
     this._discountRate = aNumber;
   }
 
