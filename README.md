@@ -1,45 +1,10 @@
 [![Continuous Integration](https://github.com/kaiosilveira/introduce-assertion-refactoring/actions/workflows/ci.yml/badge.svg)](https://github.com/kaiosilveira/introduce-assertion-refactoring/actions/workflows/ci.yml)
 
-# Refactoring catalog repository template
-
-This is a quick template to help me get a new refactoring repo going.
-
-## Things to do after creating a repo off of this template
-
-1. Run `yarn tools:cli prepare-repository -r <repo_name>`. It will:
-
-- Update the `README.md` file with the actual repository name, CI badge, and commit history link
-- Update `package.json` with the repository's name and remote URL
-- Update the repo's homepage on GitHub with:
-  - A description
-  - A website link to https://github.com/kaiosilveira/refactoring
-  - The following labels: javascript, refactoring, introduce-assertion-refactoring
-
-2. Replace the lorem ipsum text sections below with actual text
-
-## Useful commands
-
-- Generate markdown containing a diff with patch information based on a range of commits:
-
-```bash
-yarn tools:cli generate-diff -f <first_commit_sha> -l <last_commit_sha>
-```
-
-- To generate the commit history table for the last section, including the correct links:
-
-```bash
-yarn tools:cli generate-cmt-table -r introduce-assertion-refactoring
-```
-
----
-
 ℹ️ _This repository is part of my Refactoring catalog based on Fowler's book with the same title. Please see [kaiosilveira/refactoring](https://github.com/kaiosilveira/refactoring) for more details._
 
 ---
 
 # Introduce Assertion
-
-**Formerly: Old name**
 
 <table>
 <thead>
@@ -51,7 +16,7 @@ yarn tools:cli generate-cmt-table -r introduce-assertion-refactoring
 <td>
 
 ```javascript
-result = initial.code;
+if (this.discountRate) base = base - this.discountRate * base;
 ```
 
 </td>
@@ -59,11 +24,8 @@ result = initial.code;
 <td>
 
 ```javascript
-result = newCode();
-
-function newCode() {
-  return 'new code';
-}
+assert(this.discountRate > 0);
+if (this.discountRate) base = base - this.discountRate * base;
 ```
 
 </td>
@@ -71,46 +33,130 @@ function newCode() {
 </tbody>
 </table>
 
-**Inverse of: [Another refactoring](https://github.com/kaiosilveira/refactoring)**
-
-**Refactoring introduction and motivation** dolore sunt deserunt proident enim excepteur et cillum duis velit dolor. Aute proident laborum officia velit culpa enim occaecat officia sunt aute labore id anim minim. Eu minim esse eiusmod enim nulla Lorem. Enim velit in minim anim anim ad duis aute ipsum voluptate do nulla. Ad tempor sint dolore et ullamco aute nulla irure sunt commodo nulla aliquip.
+More often than not and since code is read way more times than it is modified / written, programming is a matter of making implicit assumptions explicit, so we delegate less judgment and processing to the reader, allowing for fewer broken assumptions and, therefore, more assertive code. This refactoring brings a quick and easy way to provide this feat.
 
 ## Working example
 
-**Working example general explanation** proident reprehenderit mollit non voluptate ea aliquip ad ipsum anim veniam non nostrud. Cupidatat labore occaecat labore veniam incididunt pariatur elit officia. Aute nisi in nulla non dolor ullamco ut dolore do irure sit nulla incididunt enim. Cupidatat aliquip minim culpa enim. Fugiat occaecat qui nostrud nostrud eu exercitation Lorem pariatur fugiat ea consectetur pariatur irure. Officia dolore veniam duis duis eu eiusmod cupidatat laboris duis ad proident adipisicing. Minim veniam consectetur ut deserunt fugiat id incididunt reprehenderit.
+Our working example is a simple program that calculates discount rates for a `Customer`, but only if there's a discount rate associated to the customer themself. The code looks like this:
+
+```javascript
+export class Customer {
+  applyDiscount(aNumber) {
+    return this.discountRate ? aNumber - this.discountRate * aNumber : aNumber;
+  }
+
+  set discountRate(aNumber) {
+    this._discountRate = aNumber;
+  }
+
+  get discountRate() {
+    return this._discountRate;
+  }
+}
+```
 
 ### Test suite
 
-Occaecat et incididunt aliquip ex id dolore. Et excepteur et ea aute culpa fugiat consectetur veniam aliqua. Adipisicing amet reprehenderit elit qui.
+The test suite is simple and straightfoward:
 
 ```javascript
-describe('functionBeingRefactored', () => {
-  it('should work', () => {
-    expect(0).toEqual(1);
+describe('Customer', () => {
+  describe('applyDiscount', () => {
+    it('should return the same amount if discountRate is zero', () => {
+      const customer = new Customer();
+      customer.discountRate = 0;
+      expect(customer.applyDiscount(100)).toBe(100);
+    });
+
+    it('should return the discounted amount if discountRate is not zero', () => {
+      const customer = new Customer();
+      customer.discountRate = 0.2;
+      expect(customer.applyDiscount(100)).toBe(80);
+    });
+  });
+
+  describe('set discountRate', () => {
+    it('should set the discount rate', () => {
+      const customer = new Customer();
+      customer.discountRate = 0.2;
+      expect(customer.discountRate).toBe(0.2);
+    });
+
+    it('should set the discount rate to zero', () => {
+      const customer = new Customer();
+      customer.discountRate = 0;
+      expect(customer.discountRate).toBe(0);
+    });
+
+    it('should set the discount rate to null', () => {
+      const customer = new Customer();
+      customer.discountRate = null;
+      expect(customer.discountRate).toBe(null);
+    });
   });
 });
 ```
 
-Magna ut tempor et ut elit culpa id minim Lorem aliqua laboris aliqua dolor. Irure mollit ad in et enim consequat cillum voluptate et amet esse. Fugiat incididunt ea nulla cupidatat magna enim adipisicing consequat aliquip commodo elit et. Mollit aute irure consequat sunt. Dolor consequat elit voluptate aute duis qui eu do veniam laborum elit quis.
+With that in place, we're safe to proceed.
 
 ### Steps
 
-**Step 1 description** mollit eu nulla mollit irure sint proident sint ipsum deserunt ad consectetur laborum incididunt aliqua. Officia occaecat deserunt in aute veniam sunt ad fugiat culpa sunt velit nulla. Pariatur anim sit minim sit duis mollit.
+We start by strategically switching from a ternary operator to an `if/else` statement at `Customer.applyDiscount`. This will make things easier when introducing the assertion (**[8d9994f](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/8d9994fbb99089c26c9441b4cb91be79be5e542c)**):
 
 ```diff
-diff --git a/src/price-order/index.js b/src/price-order/index.js
-@@ -3,6 +3,11 @@
--module.exports = old;
-+module.exports = new;
+@@ -1,6 +1,7 @@
+ export class Customer {
+   applyDiscount(aNumber) {
+-    return this.discountRate ? aNumber - this.discountRate * aNumber : aNumber;
++    if (!this.discountRate) return aNumber;
++    else return aNumber - this.discountRate * aNumber;
+   }
+   set discountRate(aNumber) {
 ```
 
-**Step n description** mollit eu nulla mollit irure sint proident sint ipsum deserunt ad consectetur laborum incididunt aliqua. Officia occaecat deserunt in aute veniam sunt ad fugiat culpa sunt velit nulla. Pariatur anim sit minim sit duis mollit.
+Then, we introduce the assertion to make sure `discountRate` is always positive (**[cac07a0](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/cac07a0352bfaa17f9a093a7f65a5815ccdfd442)**):
 
 ```diff
-diff --git a/src/price-order/index.js b/src/price-order/index.js
-@@ -3,6 +3,11 @@
--module.exports = old;
-+module.exports = new;
+@@ -1,7 +1,12 @@
++import assert from 'node:assert';
++
+ export class Customer {
+   applyDiscount(aNumber) {
+     if (!this.discountRate) return aNumber;
+-    else return aNumber - this.discountRate * aNumber;
++    else {
++      assert(this.discountRate > 0, 'Discount rate must be a positive number');
++      return aNumber - this.discountRate * aNumber;
++    }
+   }
+   set discountRate(aNumber) {
+```
+
+We want to capture things earlier, though, ideally at assignment time, so we move the positive number assertion to the `discountRate` setter itself (**[ec19469](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/ec19469d388799fb16e3d2c1a9dff1f51f774633)**):
+
+```diff
+@@ -10,6 +10,7 @@ export class Customer {
+   }
+   set discountRate(aNumber) {
++    assert(null === aNumber || aNumber >= 0, 'Discount rate must be a positive number');
+     this._discountRate = aNumber;
+   }
+```
+
+Finally, since we're catching the problem ealier now, we can safely remove the assertion at `applyDiscount` (**[a9c7a83](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/a9c7a83c5d584d5da6a4af3d3d02cfc5b04055d3)**):
+
+```diff
+@@ -3,10 +3,7 @@ import assert from 'node:assert';
+ export class Customer {
+   applyDiscount(aNumber) {
+     if (!this.discountRate) return aNumber;
+-    else {
+-      assert(this.discountRate > 0, 'Discount rate must be a positive number');
+-      return aNumber - this.discountRate * aNumber;
+-    }
++    else return aNumber - this.discountRate * aNumber;
+   }
+   set discountRate(aNumber) {
 ```
 
 And that's it!
@@ -119,10 +165,12 @@ And that's it!
 
 Below there's the commit history for the steps detailed above.
 
-| Commit SHA                                                                  | Message                  |
-| --------------------------------------------------------------------------- | ------------------------ |
-| [cmt-sha-1](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit-SHA-1) | description of commit #1 |
-| [cmt-sha-2](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit-SHA-2) | description of commit #2 |
-| [cmt-sha-n](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit-SHA-n) | description of commit #n |
+| Commit SHA                                                                                                                 | Message                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [8d9994f](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/8d9994fbb99089c26c9441b4cb91be79be5e542c) | switch from ternary to if/else at `Customer.applyDiscount`         |
+| [cac07a0](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/cac07a0352bfaa17f9a093a7f65a5815ccdfd442) | introduce assertion to make sure `discountRate` is always positive |
+| [ec19469](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/ec19469d388799fb16e3d2c1a9dff1f51f774633) | move positive number assertion to `discountRate` setter            |
+| [a9c7a83](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/a9c7a83c5d584d5da6a4af3d3d02cfc5b04055d3) | remove assertion for positive `discountRate` at `applyDiscount`    |
+| [a303df7](https://github.com/kaiosilveira/introduce-assertion-refactoring/commit/a303df78d956fc09248f17c68544827506f77952) | add docs                                                           |
 
 For the full commit history for this project, check the [Commit History tab](https://github.com/kaiosilveira/introduce-assertion-refactoring/commits/main).
